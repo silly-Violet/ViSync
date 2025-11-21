@@ -5,5 +5,28 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ViSync.MainWindow"
         Title="ViSync">
-    Welcome to Avalonia!
+    
+    <!-- Main Grid -->
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="*, 0.5*, *" Background="#1e1e1e">
+        <!-- Local path box -->
+        <Border Grid.Row="0" Grid.Column="0" Background="#282828">
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Grid.Column="0" Name="LocalPathInputBox" TextTrimming="CharacterEllipsis"/>
+                <Button Grid.Column="1" Name="Browse">Browse...</Button>
+            </Grid>
+        </Border>
+        
+        <!-- Local file viewer -->
+        <Border Grid.Row="1" Grid.Column="0">
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <Button Name="MainFolderDropDown"   Classes="Expand"/>
+                </StackPanel>
+                
+            </StackPanel>
+        </Border>
+        
+        
+    </Grid>
+    
 </Window>
