@@ -2,31 +2,33 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viSync="clr-namespace:ViSync"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ViSync.MainWindow"
-        Title="ViSync">
-    
+        Title="Vi Sync"
+        x:DataType="viSync:MainWindow"><!--xmlns:system="clr-namespace:System;assembly=System.Runtime"-->
+
+
     <!-- Main Grid -->
     <Grid RowDefinitions="Auto, *" ColumnDefinitions="*, 0.5*, *" Background="#1e1e1e">
         <!-- Local path box -->
-        <Border Grid.Row="0" Grid.Column="0" Background="#282828">
+        <Border Grid.Row="0" Grid.Column="0" Background="#282828" Classes="Main">
             <Grid ColumnDefinitions="*, Auto">
                 <TextBlock Grid.Column="0" Name="LocalPathInputBox" TextTrimming="CharacterEllipsis"/>
-                <Button Grid.Column="1" Name="Browse">Browse...</Button>
+                <Button Grid.Column="1" Name="Browse" Classes="Main">Browse...</Button>
             </Grid>
         </Border>
         
         <!-- Local file viewer -->
-        <Border Grid.Row="1" Grid.Column="0">
-            <StackPanel Orientation="Vertical">
-                <StackPanel Orientation="Horizontal">
-                    <Button Name="MainFolderDropDown"   Classes="Expand"/>
-                </StackPanel>
-                
-            </StackPanel>
+        <Border Grid.Row="1" Grid.Column="0" Classes="Main">
+            <TreeView Name="LocalFolderTree" ItemsSource="{Binding LocalFolder}">
+                <TreeView.ItemTemplate>
+                    <TreeDataTemplate ItemsSource="{Binding SubFolders}">
+                        <TextBlock Text="{Binding Title}"/>
+                    </TreeDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
         </Border>
-        
-        
     </Grid>
     
 </Window>
