@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
-using Avalonia;
+using System.IO;
+using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Data;
-using Avalonia.Markup.Xaml;
-using Avalonia.Markup.Xaml.Templates;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 
 namespace ViSync;
 
@@ -24,7 +21,8 @@ public partial class MainWindow : Window
         }
     }
 
-    private string LocalPath { get; set; } = "D:/Music/Main";
+    private string? LocalPath { get; set; }
+    
     
     public MainWindow()
     {
@@ -35,10 +33,42 @@ public partial class MainWindow : Window
 
     private void SetupLocalPath()
     {
+        if (LocalPath == null) return;
+        
         LocalPathInputBox.Text = LocalPath;
         ToolTip.SetTip(LocalPathInputBox, LocalPathInputBox.Text);
-
+        
         LocalFolder = [new Folder(LocalPath)];
     }
+    
+    private void SetupLocalPath(string path)
+    {
+        LocalPath = path;
+        
+        SetupLocalPath();
+    }
 
+    private async Task<string?> FolderPrompt(string title)
+    {
+        var folder = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
+        {
+            Title = title,
+            AllowMultiple = false
+        });
+
+        if (folder.Count == 1)
+        {
+            return folder[0].Path.AbsolutePath.Replace("%20", " "); //todo: exception when selecting root of drive
+        }
+        return null;
+    }
+    
+    private async void BrowseClick(object? sender, RoutedEventArgs e)
+    {
+        var folderPath = await FolderPrompt("Choose Local Folder");
+
+        if (!Directory.Exists(folderPath)) return;
+        
+        SetupLocalPath(folderPath);
+    }
 }

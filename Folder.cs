@@ -40,11 +40,13 @@ public class Folder
             subFolders.Add(MakeFolder(folder));
         }
 
+        //todo: order by numerical order (look at gallery)
+        
         foreach (var file in parentFolder.GetFiles())
         {
-            subFolders.Add(new Folder(file.Name, file.FullName, null));
+            subFolders.Add(new Folder("📄" + file.Name, file.FullName, null));
         }
 
-        return new Folder(parentFolder.Name, parentFolder.FullName, subFolders);
+        return new Folder("📁" + parentFolder.Name, parentFolder.FullName, subFolders);
     }
 }
