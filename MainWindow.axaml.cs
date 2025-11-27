@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
 
     private string? LocalPath { get; set; }
     
+    //todo: support mobile somehow?
     
     public MainWindow()
     {
@@ -56,17 +58,20 @@ public partial class MainWindow : Window
             AllowMultiple = false
         });
 
-        if (folder.Count == 1)
-        {
-            return folder[0].Path.AbsolutePath.Replace("%20", " "); //todo: exception when selecting root of drive
-        }
-        return null;
+        if (folder.Count != 1) return null;
+
+        if (!folder[0].Path.IsAbsoluteUri) // root of drive
+            return null; //todo: error message
+        
+        return folder[0].Path.AbsolutePath.Replace("%20", " ");
     }
     
     private async void BrowseClick(object? sender, RoutedEventArgs e)
     {
         var folderPath = await FolderPrompt("Choose Local Folder");
 
+        //todo: debug
+        
         if (!Directory.Exists(folderPath)) return;
         
         SetupLocalPath(folderPath);
