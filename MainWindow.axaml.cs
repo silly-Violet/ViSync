@@ -1,4 +1,3 @@
-using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
@@ -10,8 +9,8 @@ namespace ViSync;
 
 public partial class MainWindow : Window
 {
-    private ObservableCollection<Folder>? _localFolder;
-    public ObservableCollection<Folder> LocalFolder
+    private ObservableCollection<ViStorageItem>? _localFolder;
+    public ObservableCollection<ViStorageItem> LocalFolder
     {
         get => _localFolder ?? [];
 
@@ -24,30 +23,59 @@ public partial class MainWindow : Window
 
     private string? LocalPath { get; set; }
     
+    private ObservableCollection<ViStorageItem>? _awayFolder;
+    public ObservableCollection<ViStorageItem> AwayFolder
+    {
+        get => _awayFolder ?? [];
+
+        set
+        {
+            _awayFolder = value;
+            AwayFolderTree.ItemsSource = _awayFolder;
+        }
+    }
+
+    private string? AwayPath { get; set; }
+    
     //todo: support mobile somehow?
     
     public MainWindow()
     {
         InitializeComponent();
         
-        SetupLocalPath();
+        SetupPath();
     }
 
-    private void SetupLocalPath()
+    private void SetupPath(bool isLocal = true)
     {
-        if (LocalPath == null) return;
+        if (isLocal)
+        {
+            if (LocalPath == null) return;
         
-        LocalPathInputBox.Text = LocalPath;
-        ToolTip.SetTip(LocalPathInputBox, LocalPathInputBox.Text);
+            LocalPathInputBox.Text = LocalPath;
+            ToolTip.SetTip(LocalPathInputBox, LocalPathInputBox.Text);
         
-        LocalFolder = [new Folder(LocalPath)];
+            LocalFolder = [new ViStorageItem(LocalPath)];
+        }
+        else
+        {
+            if (AwayPath == null) return;
+
+            AwayPathInputBox.Text = AwayPath;
+            ToolTip.SetTip(AwayPathInputBox, AwayPathInputBox.Text);
+
+            AwayFolder = [new ViStorageItem(AwayPath)];
+        }
     }
     
-    private void SetupLocalPath(string path)
+    private void SetupPath(string path, bool isLocal = true)
     {
-        LocalPath = path;
+        if (isLocal)
+            LocalPath = path;
+        else
+            AwayPath = path;
         
-        SetupLocalPath();
+        SetupPath(isLocal);
     }
 
     private async Task<string?> FolderPrompt(string title)
@@ -60,7 +88,7 @@ public partial class MainWindow : Window
 
         if (folder.Count != 1) return null;
 
-        if (!folder[0].Path.IsAbsoluteUri) // root of drive
+        if (!folder[0].Path.IsAbsoluteUri) // root of drive or other invalid places
             return null; //todo: error message
         
         return folder[0].Path.AbsolutePath.Replace("%20", " ");
@@ -68,12 +96,12 @@ public partial class MainWindow : Window
     
     private async void BrowseClick(object? sender, RoutedEventArgs e)
     {
-        var folderPath = await FolderPrompt("Choose Local Folder");
-
-        //todo: debug
+        var isLocal = ((Button)sender!).CommandParameter!.ToString() == "Local";
+        
+        var folderPath = await FolderPrompt($"Choose {(isLocal ? "Local" : "Away")} Folder");
         
         if (!Directory.Exists(folderPath)) return;
         
-        SetupLocalPath(folderPath);
+        SetupPath(folderPath, isLocal);
     }
 }

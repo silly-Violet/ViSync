@@ -10,14 +10,14 @@
 
 
     <!-- Main Grid -->
-    <Grid RowDefinitions="Auto, *" ColumnDefinitions="*, 0.5*, *" Background="#1e1e1e">
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="*, 0.8*, *" Background="#1e1e1e">
         <!-- Local path box -->
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical">
             <Label Content="Local Path:" Margin="5, 5, 0, 0"/>
             <Border Background="#282828" Classes="Main">
                 <Grid ColumnDefinitions="*, Auto">
                     <TextBlock Grid.Row="0" Grid.Column="0" Name="LocalPathInputBox" TextTrimming="CharacterEllipsis"/>
-                    <Button Grid.Row="0" Grid.Column="1" Name="Browse" Classes="Main" Click="BrowseClick">Browse...</Button>
+                    <Button Grid.Row="0" Grid.Column="1" Classes="Main" Click="BrowseClick" CommandParameter="Local">Browse...</Button>
                 </Grid>
             </Border>
         </StackPanel>
@@ -25,6 +25,28 @@
         <!-- Local file viewer -->
         <Border Grid.Row="1" Grid.Column="0" Classes="Main">
             <TreeView Name="LocalFolderTree" ItemsSource="{Binding LocalFolder}">
+                <TreeView.ItemTemplate>
+                    <TreeDataTemplate ItemsSource="{Binding SubFolders}">
+                        <TextBlock Text="{Binding Title}"/>
+                    </TreeDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+        </Border>
+        
+        <!-- Away path box -->
+        <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Vertical">
+            <Label Content="Away Path:" Margin="0, 5, 5, 0" HorizontalAlignment="Right"/>
+            <Border Background="#282828" Classes="Main">
+                <Grid ColumnDefinitions="Auto, *">
+                    <TextBlock Grid.Row="0" Grid.Column="1" Name="AwayPathInputBox" TextTrimming="CharacterEllipsis"/>
+                    <Button Grid.Row="0" Grid.Column="0" Classes="Main" Click="BrowseClick" CommandParameter="Away">Browse...</Button>
+                </Grid>
+            </Border>
+        </StackPanel>
+        
+        <!-- Away file viewer -->
+        <Border Grid.Row="1" Grid.Column="2" Classes="Main">
+            <TreeView Name="AwayFolderTree" ItemsSource="{Binding AwayFolder}">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding SubFolders}">
                         <TextBlock Text="{Binding Title}"/>

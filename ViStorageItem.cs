@@ -5,20 +5,30 @@ using HarfBuzzSharp;
 
 namespace ViSync;
 
-public class Folder
+public class ViStorageItem
 {
-    public ObservableCollection<Folder>? SubFolders { get; }
+    public ObservableCollection<ViStorageItem>? SubFolders { get; }
     public string Title { get; }
     public string Path { get; }
     
-    private Folder(string title, string path, ObservableCollection<Folder>? subFolders)
+    public int Type { get; }
+    
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="title"></param>
+    /// <param name="path"></param>
+    /// <param name="type">0 == Folder, 1 == File</param>
+    /// <param name="subFolders"></param>
+    private ViStorageItem(string title, string path, int type, ObservableCollection<ViStorageItem>? subFolders)
     {
         Title = title;
         SubFolders = subFolders;
         Path = path;
+        Type = type;
     }
 
-    public Folder(string path)
+    public ViStorageItem(string path)
     {
         if (!Directory.Exists(path)) throw new DirectoryNotFoundException();
 
@@ -31,9 +41,9 @@ public class Folder
         SubFolders = madeFolder.SubFolders;
     }
 
-    private static Folder MakeFolder(DirectoryInfo parentFolder)
+    private static ViStorageItem MakeFolder(DirectoryInfo parentFolder)
     {
-        var subFolders = new ObservableCollection<Folder>();
+        var subFolders = new ObservableCollection<ViStorageItem>();
         
         foreach (var folder in parentFolder.GetDirectories())
         {
@@ -44,9 +54,9 @@ public class Folder
         
         foreach (var file in parentFolder.GetFiles())
         {
-            subFolders.Add(new Folder("📄" + file.Name, file.FullName, null));
+            subFolders.Add(new ViStorageItem("📄" + file.Name, file.FullName, 1,null));
         }
 
-        return new Folder("📁" + parentFolder.Name, parentFolder.FullName, subFolders);
+        return new ViStorageItem("📁" + parentFolder.Name, parentFolder.FullName, 0, subFolders);
     }
 }
