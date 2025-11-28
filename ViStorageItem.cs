@@ -1,7 +1,6 @@
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using HarfBuzzSharp;
+using System.Security.Cryptography;
 
 namespace ViSync;
 
@@ -10,9 +9,9 @@ public class ViStorageItem
     public ObservableCollection<ViStorageItem>? SubFolders { get; }
     public string Title { get; }
     public string Path { get; }
-    
     public int Type { get; }
-    
+    public string? Hash { get; }
+
     /// <summary>
     /// 
     /// </summary>
@@ -20,12 +19,14 @@ public class ViStorageItem
     /// <param name="path"></param>
     /// <param name="type">0 == Folder, 1 == File</param>
     /// <param name="subFolders"></param>
-    private ViStorageItem(string title, string path, int type, ObservableCollection<ViStorageItem>? subFolders)
+    /// <param name="hash"></param>
+    private ViStorageItem(string title, string path, int type, ObservableCollection<ViStorageItem>? subFolders, string? hash = null)
     {
         Title = title;
         SubFolders = subFolders;
         Path = path;
         Type = type;
+        Hash = hash;
     }
 
     public ViStorageItem(string path)
@@ -54,9 +55,30 @@ public class ViStorageItem
         
         foreach (var file in parentFolder.GetFiles())
         {
-            subFolders.Add(new ViStorageItem("📄" + file.Name, file.FullName, 1,null));
+            subFolders.Add(new ViStorageItem("📄" + file.Name, file.FullName, 1,null, GetHashString(file)));
         }
 
         return new ViStorageItem("📁" + parentFolder.Name, parentFolder.FullName, 0, subFolders);
+    }
+
+    private static string GetHashString(FileInfo file)
+    {
+        using var fileStream = file.OpenRead();
+
+        var byteBuffer = new byte[fileStream.Length];
+
+        fileStream.ReadExactly(byteBuffer);
+
+        var hashBytes = MD5.HashData(byteBuffer);
+
+        var output = "";
+        
+        // ReSharper disable once LoopCanBeConvertedToQuery
+        foreach (var hashByte in hashBytes)
+        {
+            output += hashByte.ToString("X2");
+        }
+
+        return output;
     }
 }
