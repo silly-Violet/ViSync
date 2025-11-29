@@ -26,7 +26,7 @@
         <Border Grid.Row="1" Grid.Column="0" Classes="Main">
             <TreeView Name="LocalFolderTree" ItemsSource="{Binding LocalFolder}">
                 <TreeView.ItemTemplate>
-                    <TreeDataTemplate ItemsSource="{Binding SubFolders}">
+                    <TreeDataTemplate ItemsSource="{Binding SubItems}">
                         <TextBlock Text="{Binding Title}"/>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
@@ -48,7 +48,7 @@
         <Border Grid.Row="1" Grid.Column="2" Classes="Main">
             <TreeView Name="AwayFolderTree" ItemsSource="{Binding AwayFolder}">
                 <TreeView.ItemTemplate>
-                    <TreeDataTemplate ItemsSource="{Binding SubFolders}">
+                    <TreeDataTemplate ItemsSource="{Binding SubItems}">
                         <TextBlock Text="{Binding Title}"/>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
