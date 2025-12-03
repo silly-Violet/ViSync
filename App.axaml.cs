@@ -4,7 +4,7 @@ using Avalonia.Markup.Xaml;
 
 namespace ViSync;
 
-public partial class App : Application
+public class App : Application
 {
     public override void Initialize()
     {
@@ -16,7 +16,8 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow();
-            //DataContext = desktop.MainWindow;
+            desktop.MainWindow.MinWidth = 650;
+            desktop.MainWindow.MinHeight = 295;
         }
 
         base.OnFrameworkInitializationCompleted();

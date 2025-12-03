@@ -1,9 +1,16 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using DialogHostAvalonia;
 
 namespace ViSync;
 
@@ -23,6 +30,7 @@ public partial class MainWindow : Window
 
     private string? LocalPath { get; set; }
     
+    
     private ObservableCollection<ViStorageItem>? _awayFolder;
     public ObservableCollection<ViStorageItem> AwayFolder
     {
@@ -37,7 +45,8 @@ public partial class MainWindow : Window
 
     private string? AwayPath { get; set; }
     
-    //todo: support mobile somehow?
+    private List<ViStorageChange>? IncomingChanges { get; set; }
+    private List<ViStorageChange>? OutgoingChanges { get; set; }
     
     public MainWindow()
     {
@@ -78,6 +87,37 @@ public partial class MainWindow : Window
         SetupPath(isLocal);
     }
 
+    private void FillChangePanels()
+    {
+        if (IncomingChanges == null || OutgoingChanges == null) return;
+
+        OutgoingChangesPanel.Children.Clear();
+        
+        // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+        foreach (var change in OutgoingChanges)
+        {
+            var label = new Label
+            {
+                Content = change.ToPath[AwayPath!.Length..]
+            };
+            
+            OutgoingChangesPanel.Children.Add(label);
+        }
+
+        IncomingChangesPanel.Children.Clear();
+        
+        // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+        foreach (var change in IncomingChanges)
+        {
+            var label = new Label
+            {
+                Content = change.ToPath[LocalPath!.Length..]
+            };
+            
+            IncomingChangesPanel.Children.Add(label);
+        }
+    }
+    
     private async Task<string?> FolderPrompt(string title)
     {
         var folder = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
@@ -88,10 +128,109 @@ public partial class MainWindow : Window
 
         if (folder.Count != 1) return null;
 
+        // ReSharper disable once InvertIf
         if (!folder[0].Path.IsAbsoluteUri) // root of drive or other invalid places
-            return null; //todo: error message
+        {
+            ShowDialogMessage("This path is not supported", false,true);
+            return null;
+        }
         
         return folder[0].Path.AbsolutePath.Replace("%20", " ");
+    }
+    
+    private static List<ViStorageChange> FindChanges(string localPath, string localPathRoot, string awayPathRoot)
+    {
+        var output = new List<ViStorageChange>();
+
+        var localInfo = new DirectoryInfo(localPath);
+        
+        foreach (var folder in localInfo.GetDirectories())
+        {
+            var folderInAway = awayPathRoot + folder.FullName[localPathRoot.Length..];
+            
+            if (Directory.Exists(folderInAway))
+            {
+                output.AddRange(FindChanges(folder.FullName, localPathRoot, awayPathRoot));
+            }
+            else
+            {
+                output.Add(new ViStorageChange(folder.FullName, folderInAway, ViStorageChange.AddType, true));
+            }
+        }
+
+        // ReSharper disable once LoopCanBeConvertedToQuery
+        foreach (var file in localInfo.GetFiles())
+        {
+            var fileInAway = awayPathRoot + file.FullName[localPathRoot.Length..];
+            
+            if (!File.Exists(fileInAway))
+            {
+                output.Add(new ViStorageChange(file.FullName, fileInAway, ViStorageChange.AddType, false));
+            }
+        }
+
+        return output;
+    }
+    
+    private void ShowDialogMessage(string message, bool buttonCenterAligned = false, bool labelCenterAligned = false,
+        bool confirmMessage = false, bool protectEnter = false, EventHandler<RoutedEventArgs>? confirmButtonClick = null)
+    {
+        var label = new Label()
+        {
+            Content = message,
+            Margin = new Thickness(5, 5, 5, 10),
+            HorizontalAlignment = labelCenterAligned ? HorizontalAlignment.Center : HorizontalAlignment.Left
+        };
+            
+        var okButton = new Button()
+        {
+            Content = confirmMessage ? "Cancel" : "Close",
+            Classes = { "Main" },
+            HotKey = new KeyGesture(confirmMessage ? Key.Escape : Key.Enter),
+            Width = 100,
+            HorizontalContentAlignment = HorizontalAlignment.Center
+        };
+        okButton.Click += (_, _) => DialogHost.IsOpen = false;
+
+        var buttonStack = new StackPanel()
+        {
+            Orientation = Orientation.Horizontal,
+            Children = { okButton },
+            HorizontalAlignment = buttonCenterAligned ? HorizontalAlignment.Center : HorizontalAlignment.Right
+        };
+        
+        //Make it options
+        if (confirmMessage)
+        {
+            var confirmButton = new Button()
+            {
+                Content = "Confirm",
+                Classes = { "Main" },
+                HotKey = protectEnter ? null : new KeyGesture(Key.Enter),
+                Width = 100
+            };
+            if (confirmButtonClick != null) confirmButton.Click += confirmButtonClick;
+            
+            buttonStack.Children.Add(confirmButton);
+        }
+        
+        
+        var mainStack = new StackPanel()
+        {
+            Orientation = Orientation.Vertical,
+            Children = { label, buttonStack },
+            Margin = new Thickness(25, 25, 25, 10)
+        };
+        
+        var dialogContent = new Border()
+        {
+            BorderBrush = new SolidColorBrush(new Color(255, 221, 221, 221)),
+            BorderThickness = new Thickness(1),
+            Child = mainStack,
+            Margin = new Thickness(-5)
+        };
+            
+        DialogHost.Show(dialogContent);
     }
     
     private async void BrowseClick(object? sender, RoutedEventArgs e)
@@ -103,5 +242,47 @@ public partial class MainWindow : Window
         if (!Directory.Exists(folderPath)) return;
         
         SetupPath(folderPath, isLocal);
+    }
+
+    private void ScanClick(object? sender, RoutedEventArgs e)
+    {
+        if (!Directory.Exists(LocalPath) || !Directory.Exists(AwayPath)) return;
+
+        IncomingChanges = FindChanges(AwayPath, AwayPath, LocalPath);
+        OutgoingChanges = FindChanges(LocalPath, LocalPath, AwayPath);
+        
+        // ReSharper disable once MergeIntoPattern
+        if (IncomingChanges != null || OutgoingChanges != null)
+        {
+            ApplyChangesButton.IsEnabled = true;
+        }
+        
+        FillChangePanels();
+    }
+
+    private void ApplyChangesClick(object? sender, RoutedEventArgs e)
+    {
+        if (IncomingChanges != null)
+        {
+            foreach (var change in IncomingChanges)
+            {
+                change.ApplyChange();
+            }
+        }
+
+        if (OutgoingChanges != null)
+        {
+            foreach (var change in OutgoingChanges)
+            {
+                change.ApplyChange();
+            }
+        }
+
+        ApplyChangesButton.IsEnabled = false;
+        
+        SetupPath();
+        SetupPath(false);
+        
+        ScanClick(sender, e);
     }
 }
