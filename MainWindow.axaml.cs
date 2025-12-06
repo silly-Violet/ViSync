@@ -232,6 +232,28 @@ public partial class MainWindow : Window
             
         DialogHost.Show(dialogContent);
     }
+
+    private async Task ApplyChanges()
+    {
+        await Task.Run(() =>
+        {
+            if (IncomingChanges != null)
+            {
+                foreach (var change in IncomingChanges)
+                {
+                    change.ApplyChange();
+                }
+            }
+
+            if (OutgoingChanges != null)
+            {
+                foreach (var change in OutgoingChanges)
+                {
+                    change.ApplyChange();
+                }
+            }
+        });
+    }
     
     private async void BrowseClick(object? sender, RoutedEventArgs e)
     {
@@ -260,29 +282,23 @@ public partial class MainWindow : Window
         FillChangePanels();
     }
 
-    private void ApplyChangesClick(object? sender, RoutedEventArgs e)
+    private async void ApplyChangesClick(object? sender, RoutedEventArgs e)
     {
-        if (IncomingChanges != null)
+        var label = new Label()
         {
-            foreach (var change in IncomingChanges)
-            {
-                change.ApplyChange();
-            }
-        }
-
-        if (OutgoingChanges != null)
-        {
-            foreach (var change in OutgoingChanges)
-            {
-                change.ApplyChange();
-            }
-        }
-
-        ApplyChangesButton.IsEnabled = false;
+            Content = "Copying files...",
+            Margin = new Thickness(5, 5, 5, 10),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        DialogHost.Show(label);
+        
+        await ApplyChanges();
+        DialogHost.IsOpen = false;
         
         SetupPath();
         SetupPath(false);
-        
-        ScanClick(sender, e);
+            
+        ScanClick(null, new RoutedEventArgs());
+        ApplyChangesButton.IsEnabled = false;
     }
 }
