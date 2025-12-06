@@ -57,7 +57,11 @@ public partial class MainWindow : Window
         if (File.Exists(_previousPathSavePath))
             LoadFromPreviousPaths();
         else
-            File.Create(_previousPathSavePath);
+        {
+            using var fileStream = new FileStream(_previousPathSavePath, FileMode.Create);
+            using var writer = new StreamWriter(fileStream);
+            writer.Write("\n");
+        }
         
         SetupPath();
         SetupPath(false);
