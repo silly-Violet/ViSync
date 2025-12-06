@@ -47,12 +47,20 @@ public partial class MainWindow : Window
     
     private List<ViStorageChange>? IncomingChanges { get; set; }
     private List<ViStorageChange>? OutgoingChanges { get; set; }
+
+    private readonly string _previousPathSavePath = Directory.GetCurrentDirectory().Replace('\\', '/') + "/previouspaths.txt";
     
     public MainWindow()
     {
         InitializeComponent();
+
+        if (File.Exists(_previousPathSavePath))
+            LoadFromPreviousPaths();
+        else
+            File.Create(_previousPathSavePath);
         
         SetupPath();
+        SetupPath(false);
     }
 
     private void SetupPath(bool isLocal = true)
@@ -75,6 +83,32 @@ public partial class MainWindow : Window
 
             AwayFolder = [new ViStorageItem(AwayPath)];
         }
+    }
+
+    private void SavePreviousPaths()
+    {
+        using var fileStream = new FileStream(_previousPathSavePath, FileMode.Create);
+        using var writer = new StreamWriter(fileStream);
+        
+        if (LocalPath != null)
+            writer.Write(LocalPath);
+        
+        writer.Write("\n");
+        
+        if (AwayPath != null)
+            writer.Write(AwayPath);
+    }
+
+    private void LoadFromPreviousPaths()
+    {
+        using var fileStream = new FileStream(_previousPathSavePath, FileMode.Open);
+        using var reader = new StreamReader(fileStream);
+
+        var readLocal = reader.ReadLine();
+        var readAway = reader.ReadLine();
+
+        if (!string.IsNullOrEmpty(readLocal)) LocalPath = readLocal;
+        if (!string.IsNullOrEmpty(readAway)) AwayPath = readAway;
     }
     
     private void SetupPath(string path, bool isLocal = true)
@@ -264,6 +298,7 @@ public partial class MainWindow : Window
         if (!Directory.Exists(folderPath)) return;
         
         SetupPath(folderPath, isLocal);
+        SavePreviousPaths();
     }
 
     private void ScanClick(object? sender, RoutedEventArgs e)
@@ -284,9 +319,9 @@ public partial class MainWindow : Window
 
     private async void ApplyChangesClick(object? sender, RoutedEventArgs e)
     {
-        var label = new Label()
+        var label = new Label
         {
-            Content = "Copying files...",
+            Content = "Copying files...\nPlease don't close the program",
             Margin = new Thickness(5, 5, 5, 10),
             HorizontalAlignment = HorizontalAlignment.Center
         };
