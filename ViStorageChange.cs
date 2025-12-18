@@ -11,7 +11,7 @@ public class ViStorageChange(string fromPath, string toPath, int type, bool isFo
     public string ToPath { get; } = toPath.Replace('\\', '/');
 
     private int Type { get; } = type;
-    private bool IsFolder { get; } = isFolder;
+    public bool IsFolder { get; } = isFolder;
 
     //public bool IsEnabled { get; set; } = true;
 
@@ -25,7 +25,7 @@ public class ViStorageChange(string fromPath, string toPath, int type, bool isFo
                 if (IsFolder)
                 {
                     Directory.CreateDirectory(ToPath);
-                    CopyDirectory(new DirectoryInfo(FromPath), new DirectoryInfo(ToPath));
+                    //CopyDirectory(new DirectoryInfo(FromPath), new DirectoryInfo(ToPath)); //new
                 }
                 else
                 {

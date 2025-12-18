@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -10,6 +12,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using DialogHostAvalonia;
 
 namespace ViSync;
@@ -49,6 +52,17 @@ public partial class MainWindow : Window
     private List<ViStorageChange>? OutgoingChanges { get; set; }
 
     private readonly string _previousPathSavePath = Directory.GetCurrentDirectory().Replace('\\', '/') + "/previouspaths.txt";
+    
+    private readonly ProgressBar _fileCopyProgressBar = new()
+    {
+        ProgressTextFormat = "Files/Folders Copied: {0}/{3} ({1:0}%)",
+        Foreground = new SolidColorBrush(new Color(0xFF, 0xAC, 0x58, 0xDA)),
+        Minimum = 0,
+        ShowProgressText = true,
+        Height = 30,
+        Margin = new Thickness(5, 0, 5, 5),
+        Width = 400
+    };
     
     public MainWindow()
     {
@@ -193,6 +207,7 @@ public partial class MainWindow : Window
             else
             {
                 output.Add(new ViStorageChange(folder.FullName, folderInAway, ViStorageChange.AddType, true));
+                output.AddRange(FindChanges(folder.FullName, localPathRoot, awayPathRoot));
             }
         }
 
@@ -277,20 +292,39 @@ public partial class MainWindow : Window
         {
             if (IncomingChanges != null)
             {
-                foreach (var change in IncomingChanges)
+                foreach (var change in from inChange in IncomingChanges where inChange.IsFolder select inChange)
                 {
                     change.ApplyChange();
+                    Dispatcher.UIThread.Invoke(ProgressFileCopyBar);
+                }
+
+                foreach (var change in from inChange in IncomingChanges where !inChange.IsFolder select inChange)
+                {
+                    change.ApplyChange();
+                    Dispatcher.UIThread.Invoke(ProgressFileCopyBar);
                 }
             }
 
             if (OutgoingChanges != null)
             {
-                foreach (var change in OutgoingChanges)
+                foreach (var change in from outChange in OutgoingChanges where outChange.IsFolder select outChange)
                 {
                     change.ApplyChange();
+                    Dispatcher.UIThread.Invoke(ProgressFileCopyBar);
+                }
+
+                foreach (var change in from outChange in OutgoingChanges where !outChange.IsFolder select outChange)
+                {
+                    change.ApplyChange();
+                    Dispatcher.UIThread.Invoke(ProgressFileCopyBar);
                 }
             }
         });
+    }
+
+    private void ProgressFileCopyBar()
+    {
+        _fileCopyProgressBar.Value++;
     }
     
     private async void BrowseClick(object? sender, RoutedEventArgs e)
@@ -329,7 +363,17 @@ public partial class MainWindow : Window
             Margin = new Thickness(5, 5, 5, 10),
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        DialogHost.Show(label);
+        
+        var stack = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Children = { label, _fileCopyProgressBar }
+        };
+
+        _fileCopyProgressBar.Value = 0;
+        _fileCopyProgressBar.Maximum = (IncomingChanges?.Count ?? 0) + (OutgoingChanges?.Count ?? 0);
+        
+        DialogHost.Show(stack);
         
         await ApplyChanges();
         DialogHost.IsOpen = false;
@@ -339,5 +383,7 @@ public partial class MainWindow : Window
             
         ScanClick(null, new RoutedEventArgs());
         ApplyChangesButton.IsEnabled = false;
+        
+        ShowDialogMessage("Files Copied!", true, true);
     }
 }
