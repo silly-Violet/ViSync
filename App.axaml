@@ -46,6 +46,10 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
         
+        <Style Selector="ProgressBar">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        
         <!--<Style Selector="Button.Expand">
             <Setter Property="Background" Value="#555555"/>
             <Setter Property="BorderBrush" Value="#00000000"/>
