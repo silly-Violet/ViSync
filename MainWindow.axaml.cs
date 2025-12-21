@@ -125,8 +125,8 @@ public partial class MainWindow : Window
         var readLocal = reader.ReadLine();
         var readAway = reader.ReadLine();
 
-        if (!string.IsNullOrEmpty(readLocal)) LocalPath = readLocal;
-        if (!string.IsNullOrEmpty(readAway)) AwayPath = readAway;
+        if (!string.IsNullOrEmpty(readLocal) && Path.Exists(readLocal)) LocalPath = readLocal;
+        if (!string.IsNullOrEmpty(readAway)  && Path.Exists(readAway)) AwayPath = readAway;
     }
     
     private void SetupPath(string path, bool isLocal = true)
